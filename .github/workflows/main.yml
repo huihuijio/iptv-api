@@ -208,7 +208,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   deploy-pages:
-    needs: [generate, publish-release]
+    needs: [generate]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
