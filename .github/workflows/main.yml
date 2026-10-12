@@ -53,9 +53,9 @@ jobs:
           pages_base_url="${PAGES_BASE_URL%/}"
           echo "pages_base_url=$pages_base_url" >> "$GITHUB_OUTPUT"
           mkdir -p pages-site release-assets
-          cp docs/result.m3u docs/result.txt pages-site/
-          cp docs/result.m3u docs/result.txt release-assets/
-          echo "m3u_bytes=$(wc -c < docs/result.m3u) txt_lines=$(wc -l < docs/result.txt)"
+          cp docs/result.m3u docs/result.txt docs/result_ipv6.m3u pages-site/
+          cp docs/result.m3u docs/result.txt docs/result_ipv6.m3u release-assets/
+          echo "m3u_bytes=$(wc -c < docs/result.m3u) ipv6_bytes=$(wc -c < docs/result_ipv6.m3u) txt_lines=$(wc -l < docs/result.txt)"
 
       - name: Create release metadata
         id: release
