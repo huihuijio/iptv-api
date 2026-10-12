@@ -55,45 +55,7 @@ jobs:
           mkdir -p pages-site release-assets
           curl -fsSL --retry 4 --retry-delay 3 -A "Mozilla/5.0" -o index.m3u "https://cdn.jsdelivr.net/gh/fanmingming/live@main/tv/m3u/index.m3u"
           curl -fsSL --retry 4 --retry-delay 3 -A "Mozilla/5.0" -o ipv6.m3u "https://cdn.jsdelivr.net/gh/fanmingming/live@main/tv/m3u/ipv6.m3u"
-          python3 - <<'PYEOF'
-import re
-
-# 合并两个 m3u（index 优先，ipv6 补充；同频道多源保留，播放器可自动切换）
-merged = []
-for fn in ("index.m3u", "ipv6.m3u"):
-    with open(fn, encoding="utf-8") as f:
-        merged.extend(f.read().splitlines())
-
-body = []
-for ln in merged:
-    if ln.startswith("#EXTM3U"):
-        body.append('#EXTM3U x-tvg-url="https://live.fanmingming.cn/e.xml"')
-    else:
-        body.append(ln)
-
-with open("result.m3u", "w", encoding="utf-8") as f:
-    f.write("\n".join(body) + "\n")
-
-# 生成 txt（频道名,url，按 group-title 分类）
-txt = []
-cur_cat = None
-prev_name = None
-for ln in body:
-    if ln.startswith("#EXTINF"):
-        m = re.search(r'group-title="([^"]*)"', ln)
-        cat = m.group(1) if m else "其他频道"
-        if cat != cur_cat:
-            cur_cat = cat
-            txt.append(f"{cat},#genre#")
-        nm = re.search(r',([^,]+)$', ln)
-        prev_name = nm.group(1).strip() if nm else None
-    elif ln.startswith("http"):
-        name = prev_name or "未知频道"
-        txt.append(f"{name},{ln}")
-
-with open("result.txt", "w", encoding="utf-8") as f:
-    f.write("\n".join(txt) + "\n")
-PYEOF
+          python3 scripts/merge_playlists.py
           cp result.m3u result.txt pages-site/
           cp result.m3u result.txt release-assets/
           echo "m3u_bytes=$(wc -c < result.m3u) txt_lines=$(wc -l < result.txt)"
