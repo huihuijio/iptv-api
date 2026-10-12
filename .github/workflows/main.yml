@@ -1,8 +1,8 @@
 name: Generate playlist manually
 
 # 生成结果只能通过 Pages Artifact 或 Release 发布，不得提交回 Git。
-# 本工作流不依赖 iptv-api 的测速环节（GitHub Actions 美国网络会误杀国内源），
-# 改为直接拉取饭太硬(fanmingming)国内优化源（jsDelivr CDN 镜像），合并后原样发布。
+# 本工作流不再自行拉源/测速（GitHub Actions 美国网络会误杀国内源），
+# 改为发布仓库 docs/ 下的精选直播源（由云电脑国内网络筛选后推送）。
 
 on:
   workflow_dispatch:
@@ -44,7 +44,7 @@ jobs:
         id: source
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Fetch and merge playlists
+      - name: Publish curated playlist
         id: generate
         env:
           PAGES_BASE_URL: ${{ steps.pages.outputs.base_url }}
@@ -53,12 +53,9 @@ jobs:
           pages_base_url="${PAGES_BASE_URL%/}"
           echo "pages_base_url=$pages_base_url" >> "$GITHUB_OUTPUT"
           mkdir -p pages-site release-assets
-          curl -fsSL --retry 4 --retry-delay 3 -A "Mozilla/5.0" -o index.m3u "https://cdn.jsdelivr.net/gh/fanmingming/live@main/tv/m3u/index.m3u"
-          curl -fsSL --retry 4 --retry-delay 3 -A "Mozilla/5.0" -o ipv6.m3u "https://cdn.jsdelivr.net/gh/fanmingming/live@main/tv/m3u/ipv6.m3u"
-          python3 scripts/merge_playlists.py
-          cp result.m3u result.txt pages-site/
-          cp result.m3u result.txt release-assets/
-          echo "m3u_bytes=$(wc -c < result.m3u) txt_lines=$(wc -l < result.txt)"
+          cp docs/result.m3u docs/result.txt pages-site/
+          cp docs/result.m3u docs/result.txt release-assets/
+          echo "m3u_bytes=$(wc -c < docs/result.m3u) txt_lines=$(wc -l < docs/result.txt)"
 
       - name: Create release metadata
         id: release
@@ -122,8 +119,8 @@ jobs:
           release_title="$RELEASE_TITLE"
           pages_link="<a href=\"$PAGES_BASE\" target=\"_blank\" rel=\"noopener noreferrer\">打开 GitHub Pages 结果页面 / Open GitHub Pages results page</a>"
           printf -v release_notes '%s\n\n%s\n\n%s' \
-            "手动生成的 IPTV 结果（透传饭太硬源，未测速）。GitHub Pages 页面提供在线订阅地址与预览。" \
-            "Manually generated IPTV results (pass-through of fanmingming sources, no speed test). The GitHub Pages page provides subscription URLs and previews." \
+            "精选 IPTV 直播源（云电脑国内网络筛选，实测可用）。GitHub Pages 页面提供在线订阅地址与预览。" \
+            "Curated IPTV sources (filtered from a domestic network, verified usable). The GitHub Pages page provides subscription URLs and previews." \
             "$pages_link"
           mapfile -d '' local_assets < <(find release-assets -maxdepth 1 -type f -print0 | sort -z)
           gh release create "$RELEASE_TAG" "${local_assets[@]}" \
